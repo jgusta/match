@@ -12,7 +12,7 @@ Provides a powerful and flexible pattern matching utility for Deno, inspired by 
 
 - Default Fallbacks: Specify default actions with .otherwise() for unmatched cases.
 
-- Reusable Predicate Chains: 
+- Reusable Predicate Chains: Match after cases are defined. Like a reverse switch statement.
 
 ## Installation
 
@@ -40,21 +40,47 @@ const result = await match("dog")
 console.log(result); // Outputs: "woof"
 ```
 
+The syntax for standard one-shot mode:
+
+```
+match(switch).on(case, action).otherwise(defaultAction).exe()
+```
+
+Where `switch` is what will be matched against each `case`. When a match is made, `action` will be called. If nothing matches, `defaultAction` is called.
+
+With no parameters to the `match` function, you start a chain of conditions and actions:
+
+```
+match().on(case, action).otherwise(defaultAction).match(switch, extra)
+```
+
+Where `switch` is what will be matched against each `case`. When a match is made, `action` will be called with `extra` as a parameter. If nothing matches, `defaultAction` is called with `extra`.
+
+Example:
 
 ```
 import match from "@jgusta/match";
 
-// Define reusable conditional chain
+async function checkToken(x:number) {
+  await new Promise((res) => setTimeout(res, 1000));
+  return x===1337?1337:0;
+}
+
+// reusable chain
 const checkAccess = match()
-  .on(() => "admin", (x) => "${x} has Full access")
-  .on(() => "editor", (x) => "${x} has Limited access")
-  .on(() => "viewer", (x) => "${x} has View only")
-  .otherwise((x) => "${x} has no access");
+  .on((x:number) => checkToken(x),(x: string) => `${x} has Full access`)
+  .on(() => "editor",(x: string) => `${x} has Limited access`)
+  .on(() => "viewer", (x: string) => `${x} has View only`)
+  .otherwise((x:string) => `${x} has no access`)
 
 
 // Example usage
-await checkAccess.match("admin", 'Joe');  // Outputs: "Joe has Full access"
-await checkAccess.match("editor", 'Barry'); // Outputs: "Barry has Limited access"
-await checkAccess.match("viewer", 'Morsk'); // Outputs: "Morsk has View only"
-await checkAccess.match("guest", 'Shlub');  // Outputs: "Shlub has No access"
+await checkAccess.match("editor", "editor") //"editor has Limited access"
+await checkAccess.match(1337, "admin") // "admin has Full access"
 ```
+
+## How It Works / What's the point
+This library was a personal challenge to see if such a pattern matching function could be made in Typescript. It is not for everyone. It is not ready for production. It may add unnecessary complexity to your code.
+ 
+## Contributing
+Contributions are welcome, if you are interested. I think this is of limited use and almost a 'code golf' sort of endeavor. It mostly works, but there is a lot of room for improvement.

@@ -76,7 +76,6 @@ const startSwitch = async function (arg: Switch): Async {
 
 type CaseResolver = ReturnType<typeof getCaseResolver>
 type CasePair = Promise<[boolean, Action]>
-type ReturnsCasePair = (resolver: CaseResolver) => CasePair
 
 interface PromiseHolder {
   finished: boolean
