@@ -1,7 +1,17 @@
 type Invalid = null | undefined
 type Scalar = string | number | boolean
 type Later = Async | ((_?: Scalar) => Scalar | Async)
-type ValidArgument<T = Scalar|number> = ((arg: number) => boolean) | ((arg?: number) => Scalar | Async)| Scalar | ((arg?: T) => Scalar | Async) | Promise<Scalar>
+type ValidArgument<T = Scalar | number> =
+  | ((arg: number) => boolean)
+  | ((arg?: number) => Scalar | Async)
+  | Scalar
+  | ((arg?: T) => Scalar | Async)
+  | Promise<Scalar>
+  | Promise<boolean>
+  | ((x: number) => Promise<string | boolean>)
+  | ((x: string) => Promise<boolean>)
+  | ((x: number) => number)
+  | ((x: number) => Promise<number>)
 type Argument = ValidArgument | Invalid | Async
 type Async = Promise<Scalar>
 
@@ -13,7 +23,7 @@ type Rest = any[]
 type Callable = VoidLater | ((_?: Scalar) => Scalar | Async)
 
 type Switch = ValidArgument
-type Case = ValidArgument 
+type Case = ValidArgument
 type Action = ValidArgument | VoidLater
 
 // running instanceof on an undefined var will throw, but typeof will not.
@@ -21,8 +31,9 @@ type Action = ValidArgument | VoidLater
 const isInvalid = (check: Argument | VoidLater): check is Invalid =>
   typeof check !== "boolean" && (typeof check === "undefined" || check === null)
 
-const isCallable = (check: Callable | Invalid | Async): check is Callable =>
-  !isInvalid(check) && typeof check === "function"
+const isCallable = (
+  check: Callable | Invalid | Async | Case
+): check is Callable => !isInvalid(check) && typeof check === "function"
 
 const isLater = (check: Argument | Later | Action): check is Later =>
   !isInvalid(check) && (typeof check === "function" || check instanceof Promise)
@@ -157,53 +168,61 @@ class PromisePostHolder implements PromiseHolder {
   }
 }
 
-// exe result. It can be a value or a function or promise.
 async function actionResolver(action: Action, ...rest: Rest) {
-  let _return = null
-  if (!isValidArgument(action)) {
-    throw new Error("invalid action")
-  }
+  let result: Scalar | Async | null = null
 
   if (isScalar(action)) {
-    return action
+    return action // Directly return the scalar value
   }
 
-  if (isAsync(action)) {
-    _return = await action
-  } else if (isCallable(action)) {
-    _return = action(...rest)
-    if (isAsync(_return)) {
-      _return = await _return
-    }
+  if (isCallable(action)) {
+    const actionResult = action(...rest)
+    result =
+      actionResult === undefined ? null : await Promise.resolve(actionResult)
+  } else if (isAsync(action)) {
+    result = await action
   }
 
-  return _return
+  if (result === undefined) {
+    return null // Convert void to null or another appropriate value
+  }
+
+  if (isScalar(result) || isAsync(result)) {
+    return result // Ensure result is Scalar or Async
+  }
+
+  throw new Error("Action did not resolve to a valid Scalar or Async value.")
 }
 
 const resolveCase = async function (
   switchResolved: Scalar,
-  caser: Case
+  predicate: Case
 ): Async {
   let result
-  if (isLater(caser)) {
-    if (isAsync(caser)) {
-      result = await caser
-    } else if (isLater(caser)) {
-      result = caser(switchResolved)
+  if (isCallable(predicate)) {
+    predicate = predicate(switchResolved)
+  }
+  if (isLater(predicate)) {
+    if (isAsync(predicate)) {
+      result = await predicate
+    } else if (isCallable(predicate)) {
+      result = predicate(switchResolved)
       if (isAsync(result)) {
         result = await result
       }
     }
-  } else if (isScalar(caser)) result = caser
-  result = isAsync(result)
-    ? result
-    : isScalar(result)
-    ? Promise.resolve(result)
-    : null
-  if (null === result) {
+  } else {
+    result = predicate
+  }
+
+  if (isScalar(result)) {
+    result = Promise.resolve(result) as Promise<Scalar>
+  }
+
+  if (null === result || isInvalid(result)) {
     throw new Error("Invalid result for switch argument")
   }
-  return result
+  return result as Promise<Scalar>
 }
 
 // Compare the switch expression to the case expression

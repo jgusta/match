@@ -1,14 +1,6 @@
 import { assertEquals } from "https://deno.land/std/assert/mod.ts"
 import match from "./select.ts"
 
-// const whatIs = (thing: unknown) => {
-//   if (thing instanceof Function) return "function"
-//   if (thing instanceof Promise) return "promise"
-//   if (thing instanceof Object) return "object"
-//   if (thing instanceof Array) return "array"
-//   if (thing instanceof String) return "string"
-// }
-
 Deno.test("match sync", async () => {
   const someValue = "called"
   const oneP = match(5).on(5, someValue)
@@ -64,7 +56,10 @@ Deno.test("match test with rest params", async () => {
 Deno.test("multi match sequence", async () => {
   const m = match()
     .on(1, (x: number) => `${x} is one`)
-    .on(() => 2, (x:string)=>`${x} is two`)
+    .on(
+      () => 2,
+      (x: string) => `${x} is two`
+    )
     .on(
       () => Promise.resolve(3),
       () => `is three`
@@ -76,9 +71,37 @@ Deno.test("multi match sequence", async () => {
     .on(5, (x: number) => Promise.resolve(`${x} is five`))
     .otherwise((x: unknown) => `${x} is something else`)
 
-  assertEquals(`one is one`, await m.match(1,"one"))
+  assertEquals(`one is one`, await m.match(1, "one"))
   assertEquals(`two is two`, await m.match(2, "two"))
   assertEquals(`is three`, await m.match(3))
   assertEquals(`4 is four`, await m.match(4, 4))
   assertEquals(`5 is five`, await m.match(5, 5))
 })
+
+
+Deno.test("multimatch with operations on switch", async () => {
+
+ async function checkToken(x:number) {
+    await new Promise((res) => setTimeout(res, 1000));
+    return x===1337?1337:0;
+  }
+
+  const checkAccess = match()
+    .on(
+      (x:number) => checkToken(x),
+      (x: string) => `${x} has Full access`
+    )
+    .on(
+      () => "editor",
+      (x: string) => `${x} has Limited access`
+    )
+    .on(
+      () => "viewer",
+      (x: string) => `${x} has View only`
+    )
+    .otherwise((x:string) => `${x} has no access`)
+
+    assertEquals(await checkAccess.match("editor", "editor"), "editor has Limited access")
+    assertEquals(await checkAccess.match(1337, "admin"), "admin has Full access")
+
+});
