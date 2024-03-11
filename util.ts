@@ -1,7 +1,7 @@
 type Invalid = null | undefined
 type Scalar = string | number | boolean
 type Later = Async | ((_?: Scalar) => Scalar | Async)
-type ValidArgument<T = Scalar> = Scalar | ((arg?: T) => Scalar | Async)
+type ValidArgument<T = Scalar|number> = ((arg: number) => boolean) | ((arg?: number) => Scalar | Async)| Scalar | ((arg?: T) => Scalar | Async) | Promise<Scalar>
 type Argument = ValidArgument | Invalid | Async
 type Async = Promise<Scalar>
 
@@ -13,7 +13,7 @@ type Rest = any[]
 type Callable = VoidLater | ((_?: Scalar) => Scalar | Async)
 
 type Switch = ValidArgument
-type Case = ValidArgument | boolean |( ()=>boolean) | Promise<boolean>
+type Case = ValidArgument 
 type Action = ValidArgument | VoidLater
 
 // running instanceof on an undefined var will throw, but typeof will not.

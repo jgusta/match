@@ -18,7 +18,6 @@ const match = function <T extends Switch | Invalid>(
     return _matchSeq() as unknown as PreOrPost<T, unknown>
   }
   if (!isInvalid(arg)) {
-    console.log("using _match")
     return _match(arg, ...rest) as unknown as PreOrPost<T, unknown>
   } else if (typeof arg === "undefined") {
     const matchSeqObject = _matchSeq()
@@ -29,14 +28,6 @@ const match = function <T extends Switch | Invalid>(
 
 type Execute<T> = () => Promise<T>
 
-type MatchRecurse<T> = {
-  on(pred: Case, action: Action): MatchRecurse<T>
-  otherwise(action: Action): {
-    exe: Execute<T>
-  }
-  exe: Execute<T>
-}
-
 // this match function closure holds context for all the 'on' cases.
 const _match = function (arg: Switch, ...rest: Rest) {
   if (!isValidArgument(arg)) {
@@ -46,6 +37,14 @@ const _match = function (arg: Switch, ...rest: Rest) {
   const bin = new PromisePostHolder()
   bin.loadSwitch(arg, ...rest)
 
+  const exe = async function () {
+    try {
+      return await bin.resolve()
+    } catch (e) {
+      throw new Error(`Failed to resolve: ${e.message}`)
+    }
+  }
+
   const matchRecurse: MatchRecurse<unknown> = {
     on(pred: Case, action: Action) {
       bin.addCase(pred, action)
@@ -53,25 +52,39 @@ const _match = function (arg: Switch, ...rest: Rest) {
     },
     otherwise(action: Action) {
       bin.defaultAction = action
-      return { exe: matchRecurse.exe }
-    },
-    exe: async function () {
-      try {
-        return await bin.resolve()
-      } catch (e) {
-        throw new Error(`Failed to resolve: ${e.message}`)
+      return {
+        exe,
+        match() {
+          throw Error(`match not available`)
+        }
       }
+    },
+    exe,
+    match() {
+      throw Error(`match not available`)
     }
   }
 
   return matchRecurse
 }
 
+type MatchRecurse<T> = {
+  on(pred: Case, action: Action): MatchRecurse<T>
+  otherwise(action: Action): {
+    exe: Execute<T>
+    match: () => Error
+  }
+  exe: Execute<T>
+  match: () => Error
+}
+
 type MatchSeqObject<T> = {
   on(pred: Case, action: Action): MatchSeqObject<T>
   otherwise(action: Action): {
+    exe: () => Error
     match: FinalMatch<T>
   }
+  exe: () => Error
   match: FinalMatch<T>
 }
 
@@ -84,41 +97,28 @@ function _matchSeq() {
     return await bin.resolveWithSwitch(arg, ...rest)
   }
 
-  const matchRecurse: MatchSeqObject<unknown> = {
+  const matchSeqObject: MatchSeqObject<unknown> = {
     on(pred: Case, action: Action) {
       bin.addCase(pred, action)
-      return matchRecurse
+      return matchSeqObject
     },
     otherwise(action: Action) {
       bin.addDefault(action)
       return {
-        match: finalMatch
+        match: finalMatch,
+        exe: () => {
+          throw Error(`exe not available`)
+        }
       }
     },
-    match: finalMatch
+    match: finalMatch,
+    exe: () => {
+      throw Error(`exe not available`)
+    }
   }
 
-  return matchRecurse
+  return matchSeqObject
 }
 
 export default match
 
-
-const m = match<number>()
-  .on(1, (x: number) => `${x} is one`)
-  .on(
-    (x:number) => 0.5 * x + 0.5 * x === 2,
-    x => `${x} is two`
-  )
-  .on(
-    () => returnsPromise(3),
-    x => `${x} is three`
-  )
-  .on(
-    x => x === 4,
-    x => `${x} is four`
-  )
-  .on(5, () => Promise.resolve(`{x} is five`))
-  .otherwise(`${x} is something else`)
-
-m.match(5)

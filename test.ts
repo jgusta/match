@@ -61,3 +61,24 @@ Deno.test("match test with rest params", async () => {
   assertEquals(one, "called 10")
 })
 
+Deno.test("multi match sequence", async () => {
+  const m = match()
+    .on(1, (x: number) => `${x} is one`)
+    .on(() => 2, (x:string)=>`${x} is two`)
+    .on(
+      () => Promise.resolve(3),
+      () => `is three`
+    )
+    .on(
+      () => 4,
+      (x: number) => `${x} is four`
+    )
+    .on(5, (x: number) => Promise.resolve(`${x} is five`))
+    .otherwise((x: unknown) => `${x} is something else`)
+
+  assertEquals(`one is one`, await m.match(1,"one"))
+  assertEquals(`two is two`, await m.match(2, "two"))
+  assertEquals(`is three`, await m.match(3))
+  assertEquals(`4 is four`, await m.match(4, 4))
+  assertEquals(`5 is five`, await m.match(5, 5))
+})
