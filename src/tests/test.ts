@@ -1,5 +1,5 @@
-import { assertEquals } from "https://deno.land/std/assert/mod.ts"
-import match from "./select.ts"
+import { assertEquals } from "@std/assert";
+import match from "../select.ts"
 
 Deno.test("match sync", async () => {
   const someValue = "called"
@@ -47,7 +47,7 @@ Deno.test("match function returning Promise", async () => {
   assertEquals(res, "woof")
 })
 
-Deno.test("match test with rest params", async () => {
+Deno.test("match test with actionParams params", async () => {
   const someCallback = (x: number) => `called ${x * 2}`
   const one = await match(7, 5).on(7, someCallback).exe()
   assertEquals(one, "called 10")
