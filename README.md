@@ -68,7 +68,10 @@ async function checkToken(x:number) {
 
 // reusable chain
 const checkAccess = match()
-  .on((x:number) => checkToken(x),(x: string) => `${x} has Full access`)
+  .on(
+    (x:number) => checkToken(x),
+    (x: string) => `${x} has Full access`
+    )
   .on(() => "editor",(x: string) => `${x} has Limited access`)
   .on(() => "viewer", (x: string) => `${x} has View only`)
   .otherwise((x:string) => `${x} has no access`)
@@ -79,8 +82,26 @@ await checkAccess.match("editor", "editor") //"editor has Limited access"
 await checkAccess.match(1337, "admin") // "admin has Full access"
 ```
 
+You can also the result of the switch statement as a parameter to your case and if it returns boolean true, there will be a match.
+
+```
+  const matchSeqObject = match();
+  const trueIfOne = (x:unknown) => x === 1;
+  const action1 = () => "Case 1";
+  const trueIfThree = (x: unknown) => x === 3;
+  const action2 = () => "Case 2";
+  const matcher = matchSeqObject.on(trueIfOne, action1).on(trueIfThree, action2)
+    .otherwise(() => "No match");
+
+  const result1 = await matcher.match(1); // Case 1
+  const result2 = await matcher.match(2); // No match
+  const result3 = await matcher.match(3); // Case 2
+```
+
 ## How It Works / What's the point
+
 This library was a personal challenge to see if such a pattern matching function could be made in Typescript. It is not for everyone. It is not ready for production. It may add unnecessary complexity to your code.
- 
+
 ## Contributing
+
 Contributions are welcome, if you are inteactionParamsed. I think this is of limited use and almost a 'code golf' sort of endeavor. It mostly works, but there is a lot of room for improvement.
