@@ -17,8 +17,11 @@ Provides a powerful and flexible pattern matching utility for Deno, inspired by 
 ## Installation
 
 ```
-# from the terminal
+# deno
 deno add @jgusta/match
+
+# bun
+bunx jsr add @jgusta/match
 
 # then import the function
 import match from "@jgusta/match";
