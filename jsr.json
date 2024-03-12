@@ -1,7 +1,0 @@
-{
-  "name": "@jgusta/match",
-  "version": "0.2.0",
-  "exports": {
-    ".": "./src/mod.ts"
-  }
-}

@@ -1,1 +1,8 @@
-{ "imports": { "@std/assert": "jsr:@std/assert@^0.219.1" } }
+{ "imports": {
+    "@std/assert": "jsr:@std/assert@^0.219.1" },
+  "name": "@jgusta/match",
+  "version": "0.2.0",
+  "exports": {
+    ".": "./src/mod.ts"
+  }
+}
