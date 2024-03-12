@@ -16,7 +16,7 @@ Provides a powerful and flexible pattern matching utility for Deno, inspired by 
 
 ## Installation
 
-```
+```shell
 # deno
 deno add @jgusta/match
 
@@ -31,7 +31,7 @@ import match from "@jgusta/match";
 
 Here's an example of how to get started:
 
-```
+```ts
 import match from "@jgusta/match";
 
 const result = await match("dog")
@@ -45,7 +45,7 @@ console.log(result); // Outputs: "woof"
 
 The syntax for standard one-shot mode:
 
-```
+```ts
 match(switch).on(case, action).otherwise(defaultAction).exe()
 ```
 
@@ -53,7 +53,7 @@ Where `switch` is what will be matched against each `case`. When a match is made
 
 With no parameters to the `match` function, you start a chain of conditions and actions:
 
-```
+```ts
 match().on(case, action).otherwise(defaultAction).match(switch, extra)
 ```
 
@@ -61,7 +61,7 @@ Where `switch` is what will be matched against each `case`. When a match is made
 
 Example:
 
-```
+```ts
 import match from "@jgusta/match";
 
 async function checkToken(x:number) {
@@ -87,18 +87,18 @@ await checkAccess.match(1337, "admin") // "admin has Full access"
 
 You can also the result of the switch statement as a parameter to your case and if it returns boolean true, there will be a match.
 
-```
-  const matchSeqObject = match();
-  const trueIfOne = (x:unknown) => x === 1;
-  const action1 = () => "Case 1";
-  const trueIfThree = (x: unknown) => x === 3;
-  const action2 = () => "Case 2";
-  const matcher = matchSeqObject.on(trueIfOne, action1).on(trueIfThree, action2)
-    .otherwise(() => "No match");
+```ts
+const matchSeqObject = match();
+const trueIfOne = (x:unknown) => x === 1;
+const action1 = () => "Case 1";
+const trueIfThree = (x: unknown) => x === 3;
+const action2 = () => "Case 2";
+const matcher = matchSeqObject.on(trueIfOne, action1).on(trueIfThree, action2)
+  .otherwise(() => "No match");
 
-  const result1 = await matcher.match(1); // Case 1
-  const result2 = await matcher.match(2); // No match
-  const result3 = await matcher.match(3); // Case 2
+const result1 = await matcher.match(1); // Case 1
+const result2 = await matcher.match(2); // No match
+const result3 = await matcher.match(3); // Case 2
 ```
 
 ## How It Works / What's the point
