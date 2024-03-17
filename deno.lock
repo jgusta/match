@@ -59,6 +59,12 @@
   "workspace": {
     "dependencies": [
       "jsr:@std/assert@^0.219.1"
-    ]
+    ],
+    "packageJson": {
+      "dependencies": [
+        "npm:ts-node@^10.9.2",
+        "npm:typescript@^5.4.2"
+      ]
+    }
   }
 }
