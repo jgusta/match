@@ -1,0 +1,26 @@
+{
+  "name": "@jgusta/match",
+  "version": "0.2.1",
+  "imports": {
+    "@std/assert": "jsr:@std/assert@^0.219.1" },
+  "main": "dist/cjs/index.js",
+  "module": "dist/mjs/index.mjs",
+  "exports": {
+    ".": {
+      "import": "./dist/mjs/index.js",
+      "require": "./dist/cjs/index.js"
+    }
+  },
+  "files": [ "src/*" ],
+  "description": "A flexible pattern matching utility, inspired by functional programming paradigms.",
+  "scripts": {
+    "build:cjs": "tsc -p tsconfig-cjs.json",
+    "build:mjs": "tsc -p tsconfig-mjs.json"
+  },
+  "author": "", 
+  "license": "ISC",
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.2"
+  }
+}
