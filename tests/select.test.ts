@@ -1,5 +1,5 @@
 import { assertEquals } from "@std/assert";
-import match from "../select.ts";
+import match from "../src/select.ts";
 
 Deno.test("should resolve with the correct action in post mode", async () => {
   const matchSeqObject = match();

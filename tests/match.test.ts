@@ -1,5 +1,5 @@
 import { assertEquals } from "@std/assert";
-import match from "../select.ts"
+import match from "../src/select.ts"
 
 Deno.test("match sync", async () => {
   const someValue = "called"
