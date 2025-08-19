@@ -1,5 +1,5 @@
 import { PromisePostHolder, PromisePreHolder } from "./promiseHolder.ts";
-import type { Action, Case, Invalid, ActionParams, Switch, Match, MatchChain, MatchRecurse, MatchSeqObject } from "./types.ts"
+import type { Action, Invalid, ActionParams, ValidArgument, Match, MatchChain, MatchRecurse, MatchSeqObject } from "./types.ts"
 import { isInvalid, isValidArgument } from "./util.ts";
 
 
@@ -13,7 +13,7 @@ import { isInvalid, isValidArgument } from "./util.ts";
  * @returns {MatchChain<T, unknown>} - The match chain object.
  * @throws {Error} - If the match argument is invalid.
  */
-const match:Match = function <T extends Switch | Invalid>(
+const match:Match = function <T extends ValidArgument | Invalid>(
   arg?: T,
   ...actionParams: ActionParams
 ): MatchChain<T, unknown> {
@@ -37,7 +37,7 @@ const match:Match = function <T extends Switch | Invalid>(
  * @returns A `MatchChain` object that allows chaining of cases and execution of the match.
  * @throws {Error} If the match argument is not a scalar or a function.
  */
-const _match = function (arg: Switch, ...actionParams: ActionParams): MatchChain<Switch, unknown>{
+const _match = function (arg: ValidArgument, ...actionParams: ActionParams): MatchChain<ValidArgument, unknown>{
   if (!isValidArgument(arg)) {
     throw Error("Bad match argument. Must be scalar or function")
   }
@@ -49,12 +49,12 @@ const _match = function (arg: Switch, ...actionParams: ActionParams): MatchChain
     try {
       return await bin.resolve()
     } catch (e) {
-      throw new Error(`Failed to resolve: ${e.message}`)
+      throw new Error(`Failed to resolve: ${e instanceof Error ? e.message : String(e)}`)
     }
   }
 
   const matchRecurse: MatchRecurse<unknown> = {
-    on(pred: Case, action: Action) {
+    on(pred: ValidArgument, action: Action) {
       bin.addCase(pred, action)
       return matchRecurse
     },
@@ -84,12 +84,12 @@ const _match = function (arg: Switch, ...actionParams: ActionParams): MatchChain
 function _matchSeq(): MatchSeqObject<unknown>{
   const bin = new PromisePreHolder()
 
-  async function finalMatch(arg: Switch, ...actionParams: ActionParams) {
+  async function finalMatch(arg: ValidArgument, ...actionParams: ActionParams) {
     return await bin.resolveWithSwitch(arg, ...actionParams)
   }
 
   const matchSeqObject: MatchSeqObject<unknown> = {
-    on(pred: Case, action: Action) {
+    on(pred: ValidArgument, action: Action) {
       bin.addCase(pred, action)
       return matchSeqObject
     },

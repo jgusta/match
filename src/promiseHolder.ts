@@ -1,10 +1,8 @@
 import type {
   Action,
   ActionParams,
-  Case,
   PromiseHolder,
   Scalar,
-  Switch,
   ValidArgument,
 } from "./types.ts";
 import {
@@ -29,11 +27,11 @@ class PromisePreHolder implements PromiseHolder {
   addDefault(action: Action) {
     this.defaultAction = action;
   }
-  addCase(pred: Case, action: Action) {
+  addCase(pred: ValidArgument, action: Action) {
     this.bin.push([pred, action]);
   }
   async resolveWithSwitch(
-    switchPromise: Switch,
+    switchPromise: ValidArgument,
     ...actionParams: ActionParams
   ) {
     const switchResolved = await startSwitch(switchPromise);
@@ -70,7 +68,7 @@ class PromisePostHolder implements PromiseHolder {
   bin: [ValidArgument, Action][] = [];
   finished = false;
   finalOutcome: Scalar | null = null;
-  switchPromise: Switch | null = null;
+  switchPromise: ValidArgument | null = null;
   actionParams: ActionParams = [];
   defaultAction: Action = () => {
     throw new Error("No match and no default");
@@ -82,10 +80,10 @@ class PromisePostHolder implements PromiseHolder {
   addDefault(action: Action) {
     this.defaultAction = action;
   }
-  addCase(pred: Case, action: Action) {
+  addCase(pred: ValidArgument, action: Action) {
     this.bin.push([pred, action]);
   }
-  loadSwitch(switchPromise: Switch, ...actionParams: ActionParams) {
+  loadSwitch(switchPromise: ValidArgument, ...actionParams: ActionParams) {
     this.actionParams = actionParams;
     this.switchPromise = switchPromise;
   }

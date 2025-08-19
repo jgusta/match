@@ -105,3 +105,122 @@ Deno.test("multimatch with operations on switch", async () => {
     assertEquals(await checkAccess.match(1337, "admin"), "admin has Full access")
 
 });
+
+Deno.test("error handling - invalid match argument", async () => {
+  try {
+    // @ts-ignore - testing invalid input
+    match(null).on(1, "test").exe()
+    assertEquals(false, true, "Should have thrown an error")
+  } catch (e) {
+    assertEquals((e as Error).message, "Invalid match argument")
+  }
+})
+
+Deno.test("error handling - no match and no default", async () => {
+  try {
+    await match(5).on(1, "one").on(2, "two").exe()
+    assertEquals(false, true, "Should have thrown an error")
+  } catch (e) {
+    assertEquals((e as Error).message.includes("No match and no default"), true)
+  }
+})
+
+Deno.test("boolean predicates - direct boolean returns", async () => {
+  const result1 = await match("test")
+    .on((x) => x === "test", "matched")
+    .on((x) => x === "other", "not matched")
+    .otherwise("default")
+    .exe()
+  
+  assertEquals(result1, "matched")
+  
+  const result2 = await match("other")
+    .on((x) => x === "test", "not matched")
+    .on((x) => x === "other", "matched")
+    .otherwise("default")
+    .exe()
+  
+  assertEquals(result2, "matched")
+})
+
+Deno.test("boolean predicates - promise returning boolean", async () => {
+  const result = await match("test")
+    .on((x: any) => Promise.resolve(x === "test"), "matched")
+    .otherwise("default")
+    .exe()
+  
+  assertEquals(result, "matched")
+})
+
+Deno.test("nested functions - function returning function", async () => {
+  const createMatcher = (target: string) => (x: any) => x === target
+  
+  const result = await match("hello")
+    .on(createMatcher("hello"), "found hello")
+    .on(createMatcher("world"), "found world")
+    .otherwise("not found")
+    .exe()
+  
+  assertEquals(result, "found hello")
+})
+
+Deno.test("void actions - function returning void", async () => {
+  let sideEffect = ""
+  
+  const result = await match("test")
+    .on("test", () => { sideEffect = "executed"; return "done" })
+    .otherwise("default")
+    .exe()
+  
+  assertEquals(sideEffect, "executed")
+  assertEquals(result, "done")
+})
+
+Deno.test("simple type matching", async () => {
+  const matcher = match()
+    .on(1, "number one")
+    .on("hello", "string hello")
+    .on(42, "number forty-two")
+    .otherwise("unknown")
+  
+  assertEquals(await matcher.match(1), "number one")
+  assertEquals(await matcher.match("hello"), "string hello") 
+  assertEquals(await matcher.match(42), "number forty-two")
+  assertEquals(await matcher.match("other"), "unknown")
+})
+
+Deno.test("promise chains and async actions", async () => {
+  const asyncAction = async (...args: any[]) => {
+    await new Promise(resolve => setTimeout(resolve, 10))
+    return `async ${args[0] || 'test'}`
+  }
+  
+  const result = await match(Promise.resolve("test"))
+    .on("test", asyncAction)
+    .otherwise("no match")
+    .exe()
+  
+  assertEquals(result, "async test")
+})
+
+Deno.test("multiple action parameters", async () => {
+  const result = await match("test", "param1", 42, true)
+    .on("test", (...args: any[]) => `${args[0]}-${args[1]}-${args[2]}`)
+    .otherwise("no match")
+    .exe()
+  
+  assertEquals(result, "param1-42-true")
+})
+
+Deno.test("function predicates with parameters", async () => {
+  const checkRange = (min: number, max: number) => (value: any) => value >= min && value <= max
+  
+  const result = await match(5)
+    .on(checkRange(1, 3), "low")
+    .on(checkRange(4, 6), "mid") 
+    .on(checkRange(7, 10), "high")
+    .otherwise("out of range")
+    .exe()
+  
+  assertEquals(result, "mid")
+})

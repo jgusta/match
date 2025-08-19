@@ -4,11 +4,9 @@ import type {
   Argument,
   Async,
   Callable,
-  Case,
   Invalid,
   Later,
   Scalar,
-  Switch,
   ValidArgument,
   VoidLater,
 } from "./types.ts";
@@ -19,7 +17,7 @@ const isInvalid = (check: Argument | VoidLater): check is Invalid =>
   (typeof check === "undefined" || check === null);
 
 const isCallable = (
-  check: Callable | Invalid | Async | Case,
+  check: Callable | Invalid | Async | ValidArgument,
 ): check is Callable => !isInvalid(check) && typeof check === "function";
 
 const isLater = (check: Argument | Later | Action): check is Later =>
@@ -39,13 +37,13 @@ const isAsync = (check: Argument | Action): check is Async =>
 const isValidArgument = (check: Argument | Action): check is ValidArgument =>
   isScalar(check) || isLater(check) || isAsync(check);
 
-const startSwitch = async function (arg: Switch): Async {
+const startSwitch = async function (arg: ValidArgument): Async {
   let result;
   if (isLater(arg)) {
     if (isAsync(arg)) {
       result = await arg;
-    } else if (isLater(arg)) {
-      result = arg();
+    } else if (isCallable(arg)) {
+      result = (arg as Function)();
       if (isAsync(result)) {
         result = await result;
       }
@@ -91,20 +89,30 @@ async function actionResolver(action: Action, ...actionParams: ActionParams) {
 
 const resolveCase = async function (
   switchResolved: Scalar,
-  predicate: Case,
+  predicate: ValidArgument,
 ): Async {
-  let result;
+  let result: any;
   if (isCallable(predicate)) {
-    predicate = predicate(switchResolved);
-  }
-  if (isLater(predicate)) {
+    const callResult = predicate(switchResolved);
+    if (callResult === undefined) {
+      result = null;
+    } else if (isAsync(callResult)) {
+      result = await callResult;
+    } else if (isCallable(callResult)) {
+      const nestedResult = (callResult as Function)(switchResolved);
+      if (nestedResult === undefined) {
+        result = null;
+      } else if (isAsync(nestedResult)) {
+        result = await nestedResult;
+      } else {
+        result = nestedResult;
+      }
+    } else {
+      result = callResult;
+    }
+  } else if (isLater(predicate)) {
     if (isAsync(predicate)) {
       result = await predicate;
-    } else if (isCallable(predicate)) {
-      result = predicate(switchResolved);
-      if (isAsync(result)) {
-        result = await result;
-      }
     }
   } else {
     result = predicate;

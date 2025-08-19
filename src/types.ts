@@ -1,17 +1,10 @@
 type Invalid = null | undefined;
 type Scalar = string | number | boolean;
 type Later = Async | ((_?: Scalar) => Scalar | Async);
-type ValidArgument<T = Scalar | number> =
-  | ((arg: number) => boolean)
-  | ((arg?: number) => Scalar | Async)
-  | Scalar
-  | ((arg?: T) => Scalar | Async)
-  | Promise<Scalar>
-  | Promise<boolean>
-  | ((x: number) => Promise<string | boolean>)
-  | ((x: string) => Promise<boolean>)
-  | ((x: number) => number)
-  | ((x: number) => Promise<number>);
+type ValidArgument<T = any> = 
+  | Scalar 
+  | Promise<Scalar | boolean>
+  | ((...args: any[]) => Scalar | boolean | Promise<Scalar | boolean> | void);
 type Argument = ValidArgument | Invalid | Async;
 type Async = Promise<Scalar>;
 
@@ -22,24 +15,22 @@ type VoidLater = (_?: any) => void;
 type ActionParams = any[];
 type Callable = VoidLater | ((_?: Scalar) => Scalar | Async);
 
-type Switch = ValidArgument;
-type Case = ValidArgument;
 type Action = ValidArgument | VoidLater;
 
-type CaseResolver = (caseTest: Case) => Promise<boolean>;
+type CaseResolver = (caseTest: ValidArgument) => Promise<boolean>;
 type CasePair = Promise<[boolean, Action]>;
 
-type MatchChain<T extends Switch | Invalid, X> = T extends Switch
+type MatchChain<T extends ValidArgument | Invalid, X> = T extends ValidArgument
   ? MatchRecurse<X>
   : MatchSeqObject<X>;
-type Match = <T extends Switch | Invalid>(
+type Match = <T extends ValidArgument | Invalid>(
   arg?: T,
   ...actionParams: ActionParams
 ) => MatchChain<T, unknown>;
-type FinalMatch<T> = (arg: Switch, ...actionParams: ActionParams) => Promise<T>;
+type FinalMatch<T> = (arg: ValidArgument, ...actionParams: ActionParams) => Promise<T>;
 type Execute<T> = () => Promise<T>;
 type MatchRecurse<T> = {
-  on(pred: Case, action: Action): MatchRecurse<T>;
+  on(pred: ValidArgument, action: Action): MatchRecurse<T>;
   otherwise(action: Action): {
     exe: Execute<T>;
     match: () => Error;
@@ -48,7 +39,7 @@ type MatchRecurse<T> = {
   match: () => Error;
 };
 type MatchSeqObject<T> = {
-  on(pred: Case, action: Action): MatchSeqObject<T>;
+  on(pred: ValidArgument, action: Action): MatchSeqObject<T>;
   otherwise(action: Action): {
     exe: () => Error;
     match: FinalMatch<T>;
@@ -60,7 +51,7 @@ export interface PromiseHolder {
   finished: boolean;
   finalOutcome: Scalar | null;
   defaultAction: Action | null;
-  addCase: (pred: Case, action: Action) => void;
+  addCase: (pred: ValidArgument, action: Action) => void;
 }
 export type {
   Action,
@@ -68,7 +59,6 @@ export type {
   Argument,
   Async,
   Callable,
-  Case,
   CasePair,
   CaseResolver,
   Invalid,
@@ -78,7 +68,6 @@ export type {
   MatchRecurse,
   MatchSeqObject,
   Scalar,
-  Switch,
   ValidArgument,
   VoidLater,
 };

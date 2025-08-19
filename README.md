@@ -105,6 +105,3 @@ const result3 = await matcher.match(3); // Case 2
 
 This library was a personal challenge to see if such a pattern matching function could be made in Typescript. It is not for everyone. It is not ready for production. It may add unnecessary complexity to your code.
 
-## Contributing
-
-Contributions are welcome, if you are inteactionParamsed. I think this is of limited use and almost a 'code golf' sort of endeavor. It mostly works, but there is a lot of room for improvement.
