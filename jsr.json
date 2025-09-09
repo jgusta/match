@@ -1,6 +1,6 @@
 {
   "name": "@jgusta/match",
-  "version": "1.0.0",
+  "version": "0.2.2",
   "exports": "./dist/mod.ts",
   "publish": {
     "exclude": [ "!dist" ]

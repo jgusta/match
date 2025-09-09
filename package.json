@@ -1,6 +1,6 @@
 {
   "name": "@jgusta/match",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "imports": {
     "@std/assert": "jsr:@std/assert@^0.219.1" },
   "main": "dist/cjs/index.js",
