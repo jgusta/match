@@ -1,7 +1,7 @@
 type Invalid = null | undefined;
 type Scalar = string | number | boolean;
 type Later = Async | ((_?: Scalar) => Scalar | Async);
-type ValidArgument<T = any> = 
+type ValidArgument = 
   | Scalar 
   | Promise<Scalar | boolean>
   | ((...args: any[]) => Scalar | boolean | Promise<Scalar | boolean> | void);

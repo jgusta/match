@@ -12,29 +12,29 @@ import type {
 } from "./types.ts";
 
 // running instanceof on an undefined var will throw, but typeof will not.
-const isInvalid = (check: Argument | VoidLater): check is Invalid =>
+const isInvalid = (check: unknown): check is Invalid =>
   typeof check !== "boolean" &&
   (typeof check === "undefined" || check === null);
 
 const isCallable = (
-  check: Callable | Invalid | Async | ValidArgument,
+  check: unknown,
 ): check is Callable => !isInvalid(check) && typeof check === "function";
 
-const isLater = (check: Argument | Later | Action): check is Later =>
+const isLater = (check: unknown): check is Later =>
   !isInvalid(check) &&
   (typeof check === "function" || check instanceof Promise);
 
-const isScalar = (check: Argument | VoidLater): check is Scalar =>
+const isScalar = (check: unknown): check is Scalar =>
   !isInvalid(check) &&
   typeof check !== "function" &&
   (typeof check === "string" ||
     typeof check === "number" ||
     typeof check === "boolean");
 
-const isAsync = (check: Argument | Action): check is Async =>
+const isAsync = (check: unknown): check is Async =>
   !isInvalid(check) && check instanceof Promise;
 
-const isValidArgument = (check: Argument | Action): check is ValidArgument =>
+const isValidArgument = (check: unknown): check is ValidArgument =>
   isScalar(check) || isLater(check) || isAsync(check);
 
 const startSwitch = async function (arg: ValidArgument): Async {
@@ -68,10 +68,17 @@ async function actionResolver(action: Action, ...actionParams: ActionParams) {
   }
 
   if (isCallable(action)) {
-    const actionResult = action(...actionParams);
-    result = actionResult === undefined
-      ? null
-      : await Promise.resolve(actionResult);
+    const actionResult = (action as Function)(...actionParams) as
+      | void
+      | Scalar
+      | Async;
+    if (actionResult === undefined) {
+      result = null;
+    } else if (isAsync(actionResult)) {
+      result = actionResult;
+    } else if (isScalar(actionResult)) {
+      result = actionResult;
+    }
   } else if (isAsync(action)) {
     result = await action;
   }
@@ -98,15 +105,6 @@ const resolveCase = async function (
       result = null;
     } else if (isAsync(callResult)) {
       result = await callResult;
-    } else if (isCallable(callResult)) {
-      const nestedResult = (callResult as Function)(switchResolved);
-      if (nestedResult === undefined) {
-        result = null;
-      } else if (isAsync(nestedResult)) {
-        result = await nestedResult;
-      } else {
-        result = nestedResult;
-      }
     } else {
       result = callResult;
     }
